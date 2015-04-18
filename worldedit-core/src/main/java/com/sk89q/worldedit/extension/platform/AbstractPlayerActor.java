@@ -451,10 +451,10 @@ public abstract class AbstractPlayerActor implements Actor, Player, Cloneable {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof LocalPlayer)) {
+        if (!(other instanceof AbstractPlayerActor)) {
             return false;
         }
-        LocalPlayer other2 = (LocalPlayer) other;
+        AbstractPlayerActor other2 = (AbstractPlayerActor) other;
         return other2.getName().equals(getName());
     }
 
