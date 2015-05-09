@@ -33,9 +33,9 @@ import java.lang.ref.WeakReference;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * An adapter to adapt a Bukkit entity into a WorldEdit one.
+ * An adapter to adapt a Sponge entity into a WorldEdit one.
  */
-class BukkitEntity implements Entity {
+class SpongeEntity implements Entity {
 
     private final WeakReference<org.spongepowered.api.entity.Entity> entityRef;
 
@@ -44,7 +44,7 @@ class BukkitEntity implements Entity {
      *
      * @param entity the entity
      */
-    BukkitEntity(org.spongepowered.api.entity.Entity entity) {
+    SpongeEntity(org.spongepowered.api.entity.Entity entity) {
         checkNotNull(entity);
         this.entityRef = new WeakReference<org.spongepowered.api.entity.Entity>(entity);
     }
@@ -76,7 +76,7 @@ class BukkitEntity implements Entity {
             if (entity instanceof Player) {
                 return null;
             }
-            return new BukkitEntity(entity);
+            return new SpongeEntity(entity);
         } else {
             return null;
         }
