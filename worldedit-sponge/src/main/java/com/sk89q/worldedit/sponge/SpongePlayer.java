@@ -22,8 +22,6 @@ package com.sk89q.worldedit.sponge;
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.base.Optional;
 import com.sk89q.util.StringUtil;
-import com.sk89q.worldedit.LocalWorld;
-import com.sk89q.worldedit.ServerInterface;
 import com.sk89q.worldedit.Vector;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.WorldVector;
@@ -35,8 +33,8 @@ import com.sk89q.worldedit.extent.inventory.BlockBag;
 import com.sk89q.worldedit.internal.cui.CUIEvent;
 import com.sk89q.worldedit.session.SessionKey;
 import com.sk89q.worldedit.world.AbstractWorld;
-import org.spongepowered.api.data.manipulators.GameModeData;
 import org.spongepowered.api.data.manipulators.entities.FlyingData;
+import org.spongepowered.api.data.manipulators.entities.GameModeData;
 import org.spongepowered.api.entity.player.Player;
 import org.spongepowered.api.entity.player.gamemode.GameModes;
 import org.spongepowered.api.item.inventory.ItemStack;
@@ -96,12 +94,12 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public double getPitch() {
-        return player.getRotation().getX();
+        return player.getRotation().getY();
     }
 
     @Override
     public double getYaw() {
-        return player.getRotation().getZ();
+        return player.getRotation().getX();
     }
 
     @Override
@@ -185,19 +183,19 @@ public class SpongePlayer extends AbstractPlayerActor {
 
     @Override
     public boolean hasCreativeMode() {
-        return player.getData(GameModeData.class).get().getGameMode() == GameModes.CREATIVE;
+        Optional<GameModeData> data = player.getData(GameModeData.class);
+        return data.isPresent() && data.get().getGameMode() == GameModes.CREATIVE;
     }
 
     @Override
     public void floatAt(int x, int y, int z, boolean alwaysGlass) {
-        //if (alwaysGlass || !player.getAllowFlight()) {
+        if (alwaysGlass /*|| !player.getAllowFlight()*/) { // TODO: Flight
             super.floatAt(x, y, z, alwaysGlass);
             return;
-        //}
-        player.getData(org.spongepowered.api.data.manipulators.FlyingData.class).get().
+        }
 
-        //setPosition(new Vector(x + 0.5, y, z + 0.5));
-        //player.setFlying(true);
+        setPosition(new Vector(x + 0.5, y, z + 0.5));
+        player.getOrCreate(FlyingData.class);
     }
 
     @Override
@@ -251,12 +249,7 @@ public class SpongePlayer extends AbstractPlayerActor {
 
         @Override
         public boolean isActive() {
-            // This is a thread safe call on CraftBukkit because it uses a
-            // CopyOnWrite list for the list of players, but the Bukkit
-            // specification doesn't require thread safety (though the
-            // spec is extremely incomplete)
-            return false;
-            //return Bukkit.getServer().getPlayerExact(name) != null;
+            return WorldEditPlugin.getInstance().getGame().getServer().getPlayer(uuid).isPresent();
         }
 
         @Override

@@ -19,6 +19,7 @@
 
 package com.sk89q.worldedit.sponge;
 
+import com.flowpowered.math.vector.Vector3i;
 import com.sk89q.worldedit.BlockVector2D;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalWorld;
@@ -37,9 +38,13 @@ import com.sk89q.worldedit.world.biome.BaseBiome;
 import com.sk89q.worldedit.world.registry.WorldData;
 import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.tile.carrier.Chest;
+import org.spongepowered.api.effect.sound.SoundTypes;
 import org.spongepowered.api.entity.Entity;
 import org.spongepowered.api.item.inventory.Inventory;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.gen.PopulatorFactory;
+import org.spongepowered.api.world.gen.types.BiomeTreeType;
+import org.spongepowered.api.world.gen.types.BiomeTreeTypes;
 
 import javax.annotation.Nullable;
 
@@ -55,13 +60,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class SpongeWorld extends LocalWorld {
 
     private static final Logger logger = WorldEdit.logger;
-
-    private static final Map<Integer, Effect> effects = new HashMap<Integer, Effect>();
-    static {
-        for (Effect effect : Effect.values()) {
-            effects.put(effect.getId(), effect);
-        }
-    }
 
     private final SpongeWorldData worldData;
     private final WeakReference<World> worldRef;
@@ -261,43 +259,9 @@ public class SpongeWorld extends LocalWorld {
         return generateTree(TreeGenerator.TreeType.TALL_REDWOOD, editSession, pt);
     }
 
-    /**
-     * An EnumMap that stores which WorldEdit TreeTypes apply to which Bukkit TreeTypes
-     */
-    private static final EnumMap<TreeGenerator.TreeType, TreeType> treeTypeMapping =
-            new EnumMap<TreeGenerator.TreeType, TreeType>(TreeGenerator.TreeType.class);
-
-    static {
-        for (TreeGenerator.TreeType type : TreeGenerator.TreeType.values()) {
-            try {
-                TreeType bukkitType = TreeType.valueOf(type.name());
-                treeTypeMapping.put(type, bukkitType);
-            } catch (IllegalArgumentException e) {
-                // Unhandled TreeType
-            }
-        }
-        // Other mappings for WE-specific values
-        treeTypeMapping.put(TreeGenerator.TreeType.SHORT_JUNGLE, TreeType.SMALL_JUNGLE);
-        treeTypeMapping.put(TreeGenerator.TreeType.RANDOM, TreeType.BROWN_MUSHROOM);
-        treeTypeMapping.put(TreeGenerator.TreeType.RANDOM_REDWOOD, TreeType.REDWOOD);
-        treeTypeMapping.put(TreeGenerator.TreeType.PINE, TreeType.REDWOOD);
-        for (TreeGenerator.TreeType type : TreeGenerator.TreeType.values()) {
-            if (treeTypeMapping.get(type) == null) {
-                WorldEdit.logger.severe("No TreeType mapping for TreeGenerator.TreeType." + type);
-            }
-        }
-    }
-
-    public static TreeType toBukkitTreeType(TreeGenerator.TreeType type) {
-        return treeTypeMapping.get(type);
-    }
-
     @Override
     public boolean generateTree(TreeGenerator.TreeType type, EditSession editSession, Vector pt) {
-        World world = getWorld();
-        TreeType bukkitType = toBukkitTreeType(type);
-        return type != null && world.generateTree(SpongeUtil.toLocation(world, pt), bukkitType,
-                new EditSessionBlockChangeDelegate(editSession));
+        return false; // TODO Implement API in sponge
     }
 
     @Override
@@ -311,16 +275,12 @@ public class SpongeWorld extends LocalWorld {
     @SuppressWarnings("deprecation")
     @Override
     public boolean isValidBlockType(int type) {
-        return Material.getMaterial(type) != null && Material.getMaterial(type).isBlock();
+        // TODO: Item type registry
     }
 
     @Override
     public void checkLoadedChunk(Vector pt) {
-        World world = getWorld();
-
-        if (!world.isChunkLoaded(pt.getBlockX() >> 4, pt.getBlockZ() >> 4)) {
-            world.loadChunk(pt.getBlockX() >> 4, pt.getBlockZ() >> 4);
-        }
+        getWorld().loadChunk(new Vector3i(pt.getBlockX() >> 4, 0, pt.getBlockZ() >> 4), true);
     }
 
     @Override
@@ -343,20 +303,22 @@ public class SpongeWorld extends LocalWorld {
 
     @Override
     public int getMaxY() {
-        return getWorld().getMaxHeight() - 1;
+        return getWorld().getHeight() - 1;
     }
 
     @Override
     public void fixAfterFastMode(Iterable<BlockVector2D> chunks) {
         World world = getWorld();
         for (BlockVector2D chunkPos : chunks) {
-            world.refreshChunk(chunkPos.getBlockX(), chunkPos.getBlockZ());
+            //world.getChunk(new Vector3i(chunkPos.getBlockX(), 0, chunkPos.getBlockZ())).get().reload()
+            //world.refreshChunk(chunkPos.getBlockX(), chunkPos.getBlockZ());
         }
     }
 
     @Override
     public boolean playEffect(Vector position, int type, int data) {
         World world = getWorld();
+        world.playSound(SoundTypes.AMBIENCE_CAVE);
 
         final Effect effect = effects.get(type);
         if (effect == null) {
@@ -375,30 +337,17 @@ public class SpongeWorld extends LocalWorld {
 
     @Override
     public void simulateBlockMine(Vector pt) {
-        getWorld().a
-        getWorld().getBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ()).
+        getWorld().getBlock(pt.getBlockX(), pt.getBlockY(), pt.getBlockZ()).cycleProperty()
     }
 
     @Override
     public BaseBlock getBlock(Vector position) {
-        BukkitImplAdapter adapter = WorldEditPlugin.getInstance().getBukkitImplAdapter();
-        if (adapter != null) {
-            return adapter.getBlock(SpongeAdapter.adapt(getWorld(), position));
-        } else {
-            Block bukkitBlock = getWorld().getBlockAt(position.getBlockX(), position.getBlockY(), position.getBlockZ());
-            return new BaseBlock(bukkitBlock.getTypeId(), bukkitBlock.getData());
-        }
+        return adapter.getBlock(SpongeAdapter.adapt(getWorld(), position));
     }
 
     @Override
     public boolean setBlock(Vector position, BaseBlock block, boolean notifyAndLight) throws WorldEditException {
-        BukkitImplAdapter adapter = WorldEditPlugin.getInstance().getBukkitImplAdapter();
-        if (adapter != null) {
             return adapter.setBlock(SpongeAdapter.adapt(getWorld(), position), block, notifyAndLight);
-        } else {
-            Block bukkitBlock = getWorld().getBlockAt(position.getBlockX(), position.getBlockY(), position.getBlockZ());
-            return bukkitBlock.setTypeIdAndData(block.getType(), (byte) block.getData(), notifyAndLight);
-        }
     }
 
     @SuppressWarnings("deprecation")

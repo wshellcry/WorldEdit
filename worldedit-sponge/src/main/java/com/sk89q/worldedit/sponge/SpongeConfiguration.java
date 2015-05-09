@@ -62,6 +62,6 @@ public class SpongeConfiguration extends YAMLConfiguration {
 
     @Override
     public File getWorkingDirectory() {
-        return plugin.getDataFolder();
+        return plugin.getConfigDirectory();
     }
 }

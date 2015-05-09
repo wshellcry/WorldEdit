@@ -61,7 +61,6 @@ public class BukkitPlayerBlockBag extends BlockBag {
 
     @Override
     public void fetchItem(BaseItem item) throws BlockBagException {
-        player.getInventory().query()
         /*final int id = item.getType();
         final int damage = item.getData();
         int amount = (item instanceof BaseItemStack) ? ((BaseItemStack) item).getAmount() : 1;

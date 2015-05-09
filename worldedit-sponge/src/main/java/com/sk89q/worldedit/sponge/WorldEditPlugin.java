@@ -285,4 +285,8 @@ public class WorldEditPlugin {
     public Game getGame() {
         return game;
     }
+
+    public Logger getLogger() {
+        return log;
+    }
 }
