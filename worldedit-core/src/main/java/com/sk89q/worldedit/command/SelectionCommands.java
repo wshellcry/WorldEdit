@@ -687,7 +687,8 @@ public class SelectionCommands {
 
         if (useData) {
             for (Countable<BaseBlock> c : distributionData) {
-                String name = BlockType.fromID(c.getID().getId()).getName();
+                BlockType block =  BlockType.fromID(c.getID().getId());
+                String name = block == null ? null : block.getName();
                 String str = String.format("%-7s (%.3f%%) %s #%d:%d",
                         String.valueOf(c.getAmount()),
                         c.getAmount() / (double) size * 100,
